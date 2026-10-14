@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "lakshmiadfv21426"
+		},
+		"LS_ABS_connectionString": {
+			"value": ""
+		},
+		"LS_ASDB_properties_typeProperties_connectionString_secretName": {
+			"value": "lucky"
+		},
+		"LS_keult_properties_typeProperties_baseUrl": {
+			"value": "https://Lkey.vault.azure.net/"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
