@@ -1,0 +1,154 @@
+{
+	"name": "pipeline1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select  * from cloud",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_ASDB_Source",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_ASDB_SInk",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Success notification",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Copy data1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": "https://prod-93.eastus.logic.azure.com:443/workflows/8d92b3a589aa45b4a742c7d7c6b36129/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=oMTrJ8NLwO6AD6tUFOJKRqV2EfBQ5e42my4P78RevsA",
+					"body": {
+						"value": "{\n  \"DataFactoryName\": \"@{pipeline().DataFactory}\",\n  \"EmailTo\": \"lakshminarayana.10789@gmail.com\",\n  \"Subject\": \"Pipeline finished!\",\n  \"PipelineName\": \"@{pipeline().Pipeline}\",\n  \"activityName\": \"copy activity\",\n  \"status\":\"@{activity('Copy data1').status}\",\n  \"ErrorMessage\": \"Everything is okey-dokey!\"\n}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Failure notification",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set variable1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Copy data1",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": "https://prod-93.eastus.logic.azure.com:443/workflows/8d92b3a589aa45b4a742c7d7c6b36129/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=oMTrJ8NLwO6AD6tUFOJKRqV2EfBQ5e42my4P78RevsA",
+					"body": {
+						"value": "{\n  \"DataFactoryName\": \"@{pipeline().DataFactory}\",\n  \"EmailTo\": \"lakshminarayana.10789@gmail.com\",\n  \"Subject\": \"An error has occurred!\",\n  \"PipelineName\": \"@{pipeline().Pipeline}\",\n  \"activityName\": \"copy activity\",\n  \"status\":\"@{activity('Copy data1').status} \",\n  \"ErrorMessage\": \"@{variables('customizederror')}\"\n}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Copy data1",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "customizederror",
+					"value": {
+						"value": "@replace(activity('Copy data1').error.message,'\"','')",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"variables": {
+			"customizederror": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-10-14T07:46:30Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
